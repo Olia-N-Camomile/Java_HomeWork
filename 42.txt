@@ -1,0 +1,77 @@
+
+5)
+select * from phone_numbers.phones order by phone_number; 
+
+7)
+select phone_number from phone_numbers.phones where id>2 and user_id>1;
+
+8)
+select username as фамилия, count(distinct id) as количество from users group by username having количество>1;
+
+9)
+таблица телефонов по юзерам:
+use phone_numbers;
+SELECT users.*, phones.phone_number, phones.id as ph_id 
+FROM users left join phones
+on phones.user_id=users.id;
+
+таблица телефонов по комнатам:
+select rooms.id, rooms.room_number, phones.phone_number, 
+phones.id as ph_id from rooms left join phones
+on rooms.phone_id=phones.id;
+
+номер комнаты для пользователя с заданной фамилией:
+use phone_numbers;
+select rooms.room_number as номер_комнаты, room_for_user.username as фамилия from rooms inner join 
+(select phones.id as ph_id, users.username as username from phones inner join users 
+on phones.user_id=users.id and users.username='Dolin') as room_for_user
+on rooms.phone_id=room_for_user.ph_id;
+
+10)
+use phone_numbers;
+SELECT users.* 
+FROM users left join phones
+on phones.user_id=users.id
+where phones.user_id is null;
+
+11)
+select rooms.id, rooms.room_number, phones.phone_number from phones right join rooms
+on rooms.phone_id=phones.id where phones.phone_number is null;
+
+12)
+use phone_numbers;
+delete from rooms where phone_id is null or phone_id>10;
+alter table rooms
+add foreign key (phone_id) references phones(id);
+
+13)
+create database online_store;
+use online_store;
+CREATE TABLE users (username varchar(50) not null primary key, passvord varchar(25) not null);
+CREATE TABLE catalogs (id int(11) not null primary key AUTO_INCREMENT, name varchar(50));
+CREATE TABLE products (id int(11) not null primary key auto_increment, name_product varchar(50), 
+catalog_id int(11), produced date, declaration text, price double,
+foreign key (catalog_id) references catalogs(id) on delete cascade);
+insert into users (username, passvord) values ('Pavlov', '12345qqqaaa');
+insert into users (username, passvord) values ('Suvorova', 'drim12ju*er');
+insert into users (username, passvord) values ('Zotov', 'yu167Hjk');
+insert into users (username, passvord) values ('Litvinova', 'ber444DF12');
+insert into users (username, passvord) values ('Nikitin', 'IoR476VVVeee111');
+insert into catalogs (name) values ('Диваны');
+insert into catalogs (name) values ('Столы раздвижные');
+insert into catalogs (name) values ('Столы журнальные');
+insert into catalogs (name) values ('Кресла');
+insert into catalogs (name) values ('Шкафы');
+insert into catalogs (name) values ('Полки');
+insert into catalogs (name) values ('Стулья');
+insert into catalogs (name) values ('Тумбы');
+insert into products (name_product, catalog_id, produced, declaration, price) 
+values ('Диван раскладной', 1, '2020-11-12', 'темно-синий, ширина 1.8 2 подушки', 15000);
+insert into products (name_product, catalog_id, produced, declaration, price) 
+values ('Диван раздвижной', 1, '2020-10-22', 'коричневый, ширина 1.9', 18000);
+insert into products (name_product, catalog_id, produced, declaration, price) 
+values ('Стол круглый', 2, '2021-1-11', 'дуб, d = 1.5', 7000.5);
+insert into products (name_product, catalog_id, produced, declaration, price) 
+values ('Стол-книжка', 2, '2021-1-11', 'ясень Шимо темный Ш 160 см X В 80 см X Г 75 см', 4500);
+insert into products (name_product, catalog_id, produced, declaration, price) 
+values ('Кресло Линоза', 4, '2020-5-17', 'темный орех, темнокоричневый',8000);
