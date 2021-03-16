@@ -1,0 +1,190 @@
+
+public class ConnectionData {
+    public static final String DRIVER = "com.mysql.jdbc.Driver";
+    public static final String URL = "jdbc:mysql://localhost:3306/phones_book";
+    public static final String USER = "root";
+    public static final String PASSWORD = "totuttotam01";
+}
+
+------------------------------- for 1 -------------------
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.Statement;
+
+public class CreatingTable {
+    private static final String CREATE_TABLE_PHONES =
+            "CREATE TABLE phones "
+                    + "(id int(5) not null primary key auto_increment,"
+                    + " user_name varchar(50) not null, number varchar(12));";
+    public static void creating()
+    {
+        try (Connection connection =
+                     DriverManager.getConnection(ConnectionData.URL,
+                             ConnectionData.USER, ConnectionData.PASSWORD);
+             Statement statement = connection.createStatement()) {
+            statement.executeUpdate(CREATE_TABLE_PHONES);
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+
+    }
+}
+
+-------------------------------- for 2 ------------------
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.ResultSet;
+public class RetrieveDataPreparedStatement {
+    public static void getPhones(String name) {
+        String Query_Text=
+                "select phones.number from phones where phones.user_name=?";
+        try (Connection connection =
+                     DriverManager.getConnection(ConnectionData.URL,
+                             ConnectionData.USER, ConnectionData.PASSWORD);
+             PreparedStatement preparedStatement = connection.prepareStatement(Query_Text))
+        {
+            preparedStatement.setString(1, name);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()) {
+                System.out.println(resultSet.getString("number"));
+            }
+
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+
+    }
+}
+---------------------------- for 3 ------------------------
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.Map;
+import java.util.Set;
+public class InsertDataPreparedStatement {
+    public static void addPhones(Map<String, String> phones) {
+        String Query_Text= "insert into phones (user_name, number) values (?,?)";
+        try (Connection connection =
+                     DriverManager.getConnection(ConnectionData.URL,
+                             ConnectionData.USER, ConnectionData.PASSWORD);
+             PreparedStatement preparedStatement = connection.prepareStatement(Query_Text))
+        { Set<String> names=phones.keySet();
+            for (String name : names) {
+                String phone=phones.get(name);
+                preparedStatement.setString(1, name);
+                preparedStatement.setString(2, phone);
+                preparedStatement.addBatch();
+            }
+            preparedStatement.executeBatch();
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+}
+
+-------------------- for 4 ----------------------------------
+
+
+public abstract class AbstractDAO <T> {
+    public abstract T findEntityById(int id1, int id2);
+
+}
+
+
+public class Phone {
+    public String number, name;
+    public int id;
+    public Phone(int id, String name, String number) {
+        this.id = id;
+        this.name = name;
+        this.number = number;
+    }
+}
+
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+
+public class PhoneDAO extends AbstractDAO <List<Phone>> {
+    public static final String Query_Text = "SELECT * FROM phones WHERE id>=? and id<=?";
+    @Override
+    public List<Phone> findEntityById(int id1, int id2) {
+        List<Phone> phones = new ArrayList<>();
+        try (Connection connection =
+                     DriverManager.getConnection(ConnectionData.URL,
+                             ConnectionData.USER, ConnectionData.PASSWORD);
+             PreparedStatement preparedStatement = connection.prepareStatement(Query_Text))
+        {
+            preparedStatement.setInt(1, id1);
+            preparedStatement.setInt(2, id2);
+            ResultSet rs = preparedStatement.executeQuery();
+            while (rs.next()) {
+                int id = rs.getInt(1);
+                String name = rs.getString(2);
+                String number = rs.getString(3);
+                phones.add(new Phone(id, name, number));
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+        return phones;
+    }
+}
+
+-------------------------------------------------------
+import java.util.List;
+import java.util.Scanner;
+import java.util.Map;
+import java.util.HashMap;
+
+public class Main {
+
+    public static void main(final String[] args) {
+        Scanner scanner=new Scanner(System.in);
+        System.out.println("Введите номер задания: (1 - создание таблицы телефонов,");
+        System.out.println("                        2 - получение телефона из БД,");
+        System.out.println("                        3 - запись телефонов в БД");
+        System.out.println("                        4 - получение записей в интервале идентификаторов)");
+        String n=scanner.nextLine();
+        switch (n) {
+            case "1" ->
+                    CreatingTable.creating();
+            case "2" -> {
+                System.out.println("Введите имя:");
+                String name=scanner.nextLine();
+                RetrieveDataPreparedStatement.getPhones(name);
+            }
+            case "3" -> {
+                Map<String,String> phones=new HashMap<>();
+                phones.put("Pavlov","+79211337438");
+                phones.put("Frolova","+79877331290");
+                phones.put("Kulsha","+79214338479");
+                phones.put("Zotov","+79211337438");
+                phones.put("Sizov","+79457443455");
+                phones.put("Nikitin","+79211337438");
+                InsertDataPreparedStatement.addPhones(phones);
+            }
+            case  "4" -> {
+                System.out.println("Введите идентификатор, с которого нужно получить записи:");
+                if (scanner.hasNextInt()) { int id1= scanner.nextInt();
+                    System.out.println("Введите идентификатор, по который (включительно) нужно получить записи:");
+                    if (scanner.hasNextInt()) {
+                        int id2 = scanner.nextInt();
+                        PhoneDAO phoneDAO = new PhoneDAO();
+                        List<Phone> phones = phoneDAO.findEntityById(id1, id2);
+                        for (Phone phone : phones) {
+                            System.out.printf("%d) %s телефон: %s%n", phone.id, phone.name, phone.number);
+                        }
+                    }
+                    else System.out.println("Введено не целое число!");
+                }
+                else System.out.println("Введено не целое число!");
+            }
+            default -> System.out.println("Задания с таким номером не существует");
+        }
+    }
+}
+
