@@ -2,15 +2,18 @@
 import java.util.*;
 
 public class Main {
+    static boolean isSessionFactory=false;
     public static void main(final String[] args) {
         Scanner scanner=new Scanner(System.in);
         WarehouseDAO warehouseDAO = new WarehouseDAO();
         System.out.println("Для создания таблиц введите 0");
         System.out.println("Для заполнения списка складов и остатка товаров введите 1");
-        System.out.println("Для записи сведений о новой обуви введите 2");
-        System.out.println("Для вывода списка складов введите 3");
-        System.out.println("Для вывода списка обуви введите 4");
-        System.out.println("Для вывода остатков обуви введите 5");
+        System.out.println("Для ввода в эксплуатацию нового склада введите 2");
+        System.out.println("Для записи сведений о новой обуви введите 3");
+        System.out.println("Для записи (или изменения при наличии) сведений об обуви введите 4");
+        System.out.println("Для вывода списка складов введите 5");
+        System.out.println("Для вывода списка обуви введите 6");
+        System.out.println("Для вывода остатков обуви введите 7");
         System.out.println("Для оприходования на склад партии обуви введите +");
         System.out.println("Для списания партии обуви со склада введите -");
         System.out.println("Для выхода введите любые другие символы");
@@ -65,6 +68,25 @@ public class Main {
 
            }
             case "2" -> {
+                String name;
+                int capacity=0;
+                System.out.println("Введите наименование склада:");
+                name = scanner.nextLine();
+                if (name.equals("")) System.out.println("Пустое наименование склада!");
+                else {
+                    System.out.println("Введите вместимость склада (количество пар):");
+                    if (scanner.hasNextInt()) capacity = scanner.nextInt();
+                    if (capacity==0) System.out.println("Вместимость склада не может быть равна нулю!");
+                    else {
+                        if (!isSessionFactory) {
+                            HibernateRunner.main();
+                            isSessionFactory=true;
+                        }
+                        HibernateRunner.addWarehouses(name, capacity);
+                    }
+                }
+            }
+            case "3" -> {
                 ShoeDAO shoeDAO = new ShoeDAO();
                 List<Shoe> listShoe = new ArrayList<>();
                 String code="", allCode = "";
@@ -74,8 +96,7 @@ public class Main {
                     if (!code.isEmpty()) {scanner.nextLine();}
                     code = scanner.nextLine();
                     if (code.equals("end")) theEnd = true;
-                    else if (code.isEmpty()) continue;
-                    else if (allCode.contains(code)) {
+                    else if (!code.isEmpty() && allCode.contains(code)) {
                         System.out.println("Обувь с таким артикулом уже была добавлена ранее!");
                         code="";
                     }
@@ -100,12 +121,36 @@ public class Main {
                 }
                 shoeDAO.addNewEntry(listShoe);
             }
-            case "3" -> Warehouses.printList(warehouseDAO.findAllWithBusy());
             case "4" -> {
+                System.out.println("Введите артикул:");
+                String code = scanner.nextLine();
+                if ("".equals(code)) {
+                    System.out.println("Артикул не может быть пустым!");
+                    System.exit(0);
+                }
+                System.out.println("Введите наименование:");
+                String name = scanner.nextLine();
+                System.out.println("Введите цвет:");
+                String color = scanner.nextLine();
+                System.out.println("Введите материал:");
+                String material = scanner.nextLine();
+                System.out.println("Введите размер:");
+                if (scanner.hasNextFloat()) {
+                    float size = scanner.nextFloat();
+                    Shoe shoe = new Shoe(code, name, color, material, size);
+                    if (!isSessionFactory) {
+                        HibernateRunner.main();
+                        isSessionFactory=true;
+                    }
+                    HibernateRunner.updateShoe(shoe);
+                }
+            }
+            case "5" -> Warehouses.printList(warehouseDAO.findAllWithBusy());
+            case "6" -> {
                 ShoeDAO shoeDAO = new ShoeDAO();
                 Shoe.printList(shoeDAO.findAll(""));
             }
-            case "5" -> {
+            case "7" -> {
                 ConsignmentDAO consignmentDAO = new ConsignmentDAO();
                 consignmentDAO.findAll("");
             }
@@ -151,9 +196,9 @@ public class Main {
                         warehouse = warehouseDAO.findEntryAndBusyById(id);
                         if (warehouse == null) {
                             System.out.println("Не найден склад с таким номером!");
-                        } else if (n.equals("+") && warehouse.busy + allQ > warehouse.capacity) {
-                            System.out.println("На складе " + warehouse.name + " осталось место только для " +
-                                    +(warehouse.capacity - warehouse.busy) + " пар!");
+                        } else if (n.equals("+") && warehouse.busy + allQ > warehouse.getCapacity()) {
+                            System.out.println("На складе " + warehouse.getName() + " осталось место только для " +
+                                    +(warehouse.getCapacity() - warehouse.busy) + " пар!");
                         } else {
                             isOk = true;
                         }
@@ -165,6 +210,9 @@ public class Main {
                 }
             }
         }
+        System.out.println("Для завершения работы введите end, для продолжения любые другие символы:");
+        n=scanner.nextLine();
+        if (!"end".equals(n)) {main(args);}
     }
 
     public static void movements(Consignment consignment, String direction)
@@ -173,7 +221,7 @@ public class Main {
         String shoeCode="(";
         Set<Shoe> shoeSet = consignment.shoeMap.keySet();
         for (Shoe shoe : shoeSet) {
-            shoeCode=shoeCode+(shoeCode.equals("(") ? "" : ",")+"'"+shoe.code+"'";
+            shoeCode=shoeCode+(shoeCode.equals("(") ? "" : ",")+"'"+shoe.getCode()+"'";
         }
         shoeCode+=")";
         String query_Text_Leftover = "select * from leftover where id_location=? and code_shoe in "+shoeCode;
@@ -184,7 +232,7 @@ public class Main {
                 "inner join shoes on lft.code_shoe=shoes.vendor_code";
         */
         List<String> listQT = new ArrayList<>();
-        String query_Text_Movement = "";
+        String query_Text_Movement;
         ConsignmentDAO consignmentDAO = new ConsignmentDAO();
         Consignment consignmentLeftover = consignmentDAO.findEntryByNumber(consignment.warehouse, query_Text_Leftover);
         if (consignmentLeftover==null) { System.exit(0);}
@@ -193,7 +241,7 @@ public class Main {
             int q_Leftover = 0;
             boolean isLeftover=false;
             for (Shoe shoeLeftover : shoeSetLeftover) {
-                if (shoeLeftover.code.equals(shoe.code)) {
+                if (shoeLeftover.getCode().equals(shoe.getCode())) {
                     isLeftover=consignmentLeftover.shoeMap.get(shoeLeftover) != null;
                     q_Leftover=isLeftover ? consignmentLeftover.shoeMap.get(shoeLeftover) : 0;
                     break;
@@ -201,21 +249,21 @@ public class Main {
             }
             int q = consignment.shoeMap.get(shoe);
             if ((direction.equals("-") && q>q_Leftover) || (direction.equals("+") && -q>q_Leftover)) {
-                errorText="Для списания не хватило "+(q-q_Leftover)+" пар с артикулом: "+shoe.code;
+                errorText="Для списания не хватило "+(q-q_Leftover)+" пар с артикулом: "+shoe.getCode();
                 break;
             }
             else if ((direction.equals("-") && q==q_Leftover) || (direction.equals("+") && -q==q_Leftover)) {
                 query_Text_Movement= "delete from leftover WHERE id_location="+
-                        +consignment.warehouse.id+" AND code_shoe="+"'"+shoe.code+"'";
+                        +consignment.warehouse.getId()+" AND code_shoe="+"'"+shoe.getCode()+"'";
             }
             else if (!isLeftover) {
                 query_Text_Movement= "insert into leftover(id_location, code_shoe, quantity) values("+
-                        +consignment.warehouse.id+", '"+shoe.code+"', "+q+")";
+                        +consignment.warehouse.getId()+", '"+shoe.getCode()+"', "+q+")";
             }
             else {
                 int q_rez = direction.equals("-") ? q_Leftover-q : q_Leftover+q;
                 query_Text_Movement= "UPDATE leftover SET quantity=" + q_rez +" WHERE id_location="+
-                        +consignment.warehouse.id+" AND code_shoe="+"'"+shoe.code+"'";
+                        +consignment.warehouse.getId()+" AND code_shoe="+"'"+shoe.getCode()+"'";
             }
             listQT.add(query_Text_Movement);
         }

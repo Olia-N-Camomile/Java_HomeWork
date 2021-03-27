@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC
+        "-//Hibernate/Hibernate Mapping DTD//EN"
+        "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+    <class name="Warehouses" table="storage_locations">
+        <meta attribute="class-description">
+            Это класс, описывающий места хранения обуви (склады)
+        </meta>
+        <id name="id" type="int" column="id">
+            <generator class="native"/>
+        </id>
+        <property name="name" column="name" type="string"/>
+        <property name="capacity" column="capacity" type="int"/>
+    </class>
+    <class name="Shoe" table="shoes">
+        <meta attribute="class-description">
+            Это класс, описывающий обувь
+        </meta>
+        <id name="code" type="string" column="vendor_code">
+        </id>
+        <property name="name" column="name" type="string"/>
+        <property name="color" column="color" type="string"/>
+        <property name="material" column="material" type="string"/>
+        <property name="size" column="size" type="float"/>
+    </class>
+
+</hibernate-mapping>

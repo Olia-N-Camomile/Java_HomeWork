@@ -54,8 +54,8 @@ public class ConsignmentDAO extends AbstractDAO <Consignment, Warehouses> {
             Set<Shoe> shoeSet = consignment.shoeMap.keySet();
             for (Shoe shoe : shoeSet) {
                 int q = consignment.shoeMap.get(shoe);
-                statement.setInt(1, consignment.warehouse.id);
-                statement.setString(2, shoe.code);
+                statement.setInt(1, consignment.warehouse.getId());
+                statement.setString(2, shoe.getCode());
                 statement.setInt(3, q);
                 statement.addBatch();
             }
@@ -74,7 +74,7 @@ public class ConsignmentDAO extends AbstractDAO <Consignment, Warehouses> {
         try (Connection connection = ConnectorDB.getConnection();
              PreparedStatement statement = connection.prepareStatement(query_Text) )
         {
-            statement.setInt(1, warehouses.id);
+            statement.setInt(1, warehouses.getId());
             ResultSet rs = statement.executeQuery();
             while (rs.next()) {
                 /*
@@ -105,7 +105,6 @@ public class ConsignmentDAO extends AbstractDAO <Consignment, Warehouses> {
                     "on leftover.id_location=gr_lf.id_l " +
                     "order by id_location";
         }
-        String textS="";
         int id_location=-1;
         try (Connection connection = ConnectorDB.getConnection();
              PreparedStatement statement = connection.prepareStatement(query_Text) )

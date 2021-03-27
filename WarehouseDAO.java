@@ -30,8 +30,8 @@ public class WarehouseDAO extends AbstractDAO <List<Warehouses>,Integer> {
              PreparedStatement statement = connection.prepareStatement(Query_Text) )
         {
             for (Warehouses warehouse : list) {
-                statement.setString(1, warehouse.name);
-                statement.setInt(2, warehouse.capacity);
+                statement.setString(1, warehouse.getName());
+                statement.setInt(2, warehouse.getCapacity());
                 statement.addBatch();
             }
            statement.executeBatch();

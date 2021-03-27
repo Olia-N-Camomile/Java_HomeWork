@@ -29,11 +29,11 @@ public class ShoeDAO extends AbstractDAO <List<Shoe>, String> {
              PreparedStatement statement = connection.prepareStatement(Query_Text) )
         {
             for (Shoe shoe : list) {
-                statement.setString(1, shoe.code);
-                statement.setString(2, shoe.name);
-                statement.setFloat(3, shoe.size);
-                statement.setString(4, shoe.color);
-                statement.setString(5, shoe.material);
+                statement.setString(1, shoe.getCode());
+                statement.setString(2, shoe.getName());
+                statement.setFloat(3, shoe.getSize());
+                statement.setString(4, shoe.getColor());
+                statement.setString(5, shoe.getMaterial());
                 statement.addBatch();
             }
             statement.executeBatch();
